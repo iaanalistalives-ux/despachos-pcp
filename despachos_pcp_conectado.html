@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="es-PE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Despachos · Fecha PCP · LIVES</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{
+  --petrol:#0E3B36; --petrol-2:#12463F; --emer:#10B981; --sage:#0F7A5A; --sage-dark:#0B815E;
+  --slate:#4E6B78; --taupe:#B45309; --rose:#DC2626; --tan:#F59E0B;
+  --warm:#DCE5E2; --warm-light:#F1F6F4; --stone:#5F726C; --card:#fff;
+  --sh:0 1px 3px rgba(14,59,54,.06),0 1px 2px rgba(14,59,54,.04);
+  --sh-h:0 4px 12px rgba(14,59,54,.10); --r:12px; --sidebar:212px;
+}
+body{margin:0;background:var(--warm-light);color:#333;font-family:Calibri,Arial,sans-serif;
+font-size:14px;line-height:1.45;font-variant-numeric:tabular-nums;}
+*{box-sizing:border-box;}
+
+.header{background:var(--petrol);border-bottom:3px solid var(--emer);min-height:70px;
+display:flex;align-items:center;gap:16px;padding:0 22px;flex-wrap:wrap;}
+.header img{height:38px;display:block;}
+.divider{width:1px;height:34px;background:rgba(255,255,255,.3);}
+.htitle{color:#fff;font-size:17px;font-weight:700;letter-spacing:.2px;}
+.hsub{color:#B9CFC9;font-size:11.5px;}
+.hstate{margin-left:auto;color:#B9CFC9;font-size:11.5px;text-align:right;}
+
+.wrap{width:100%;max-width:none;margin:0 auto;padding:18px clamp(16px,2.2vw,52px) 44px;}
+.verdict .s,details.help p,details.help li{max-width:130ch;}
+
+.bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--card);
+border-radius:var(--r);box-shadow:var(--sh);padding:10px 14px;margin-bottom:14px;
+position:sticky;top:0;z-index:15;}
+.seg{display:inline-flex;background:var(--warm-light);border-radius:8px;padding:3px;gap:2px;}
+.seg button{background:none;border:none;font-family:inherit;font-size:13px;font-weight:700;
+color:var(--stone);padding:6px 14px;border-radius:6px;cursor:pointer;}
+.seg button.active{background:var(--sage);color:#fff;box-shadow:var(--sh);}
+select{font-family:inherit;font-size:13.5px;font-weight:700;color:var(--sage);
+border:1px solid var(--warm);border-radius:8px;padding:7px 12px;background:#fff;cursor:pointer;}
+.bar input[type=search],.bar input[type=text]{font-family:inherit;font-size:13.5px;color:#333;
+border:1px solid var(--warm);border-radius:8px;padding:7px 12px;background:#fff;min-width:200px;}
+.bar input:focus,select:focus{outline:none;border-color:var(--sage);box-shadow:0 0 0 3px rgba(15,122,90,.12);}
+.quien{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.5px;
+text-transform:uppercase;color:var(--stone);}
+.quien input[type=text]{min-width:150px;text-transform:none;letter-spacing:0;font-weight:400;}
+.quien.falta input{border-color:var(--rose);background:#FFF7F7;}
+.btn{font-family:inherit;font-size:13px;font-weight:700;border-radius:8px;padding:8px 14px;
+cursor:pointer;border:1px solid var(--warm);background:#fff;color:var(--sage);}
+.btn:hover{border-color:var(--sage);}
+.btn.primary{background:var(--sage);color:#fff;border-color:var(--sage);}
+.btn.primary:hover{background:var(--sage-dark);}
+.btn[disabled]{opacity:.6;cursor:default;}
+.btn.chico{font-size:12px;padding:4px 10px;}
+.spacer{margin-left:auto;}
+
+.aviso{display:none;border-radius:8px;padding:12px 16px;font-size:13px;margin-bottom:14px;}
+.aviso.error{display:block;background:#FBE9E9;border:1px solid var(--rose);color:var(--rose);}
+.aviso.info{display:block;background:#FEF3E2;border:1px solid var(--tan);color:var(--taupe);}
+
+.verdict{display:flex;align-items:center;gap:16px;background:var(--card);border-radius:var(--r);
+box-shadow:var(--sh);padding:16px 20px;margin-bottom:14px;border-left:6px solid var(--slate);
+border-top-left-radius:0;border-bottom-left-radius:0;}
+.verdict .dot{width:44px;height:44px;border-radius:50%;background:#EDF1F2;color:var(--slate);
+display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;flex:none;}
+.verdict .t{font-size:19px;font-weight:700;color:var(--slate);line-height:1.2;}
+.verdict .s{font-size:13px;color:#333;margin-top:3px;}
+.verdict.ok{border-left-color:var(--sage);}
+.verdict.ok .dot{background:#E7F4EF;color:var(--sage);} .verdict.ok .t{color:var(--sage);}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:14px;align-items:stretch;}
+.kpi{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:0;
+position:relative;overflow:hidden;transition:box-shadow .15s,transform .15s;}
+.kpi:hover{box-shadow:var(--sh-h);transform:translateY(-1px);}
+.kpi .banda{display:block;height:5px;background:var(--sage);}
+.kpi.neutro .banda{background:var(--slate);}
+.kpi .cuerpo{padding:16px 18px 18px;}
+.kpi .l{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--stone);}
+.kpi .row{display:flex;align-items:baseline;gap:10px;margin-top:8px;}
+.kpi .v{font-size:52px;font-weight:700;line-height:1;color:var(--sage);letter-spacing:-1.5px;}
+.kpi.neutro .v{color:var(--slate);}
+.kpi .s{font-size:11.5px;color:var(--stone);margin-top:6px;}
+.kpi:not(.hero) .v{font-size:34px;letter-spacing:-.8px;}
+.kpi.hero{background:var(--petrol);}
+.kpi.hero .banda{background:var(--emer);}
+.kpi.hero .l{color:#8FB3AC;}
+.kpi.hero .v{color:#fff;}
+.kpi.hero .s{color:#8FB3AC;}
+
+.insight{background:var(--card);border-left:4px solid var(--tan);border-radius:0 var(--r) var(--r) 0;
+box-shadow:var(--sh);padding:12px 16px;margin-bottom:14px;font-size:13.5px;}
+.insight b{color:var(--sage-dark);}
+.note{background:var(--card);border-left:4px solid var(--slate);border-radius:0 var(--r) var(--r) 0;
+box-shadow:var(--sh);padding:10px 16px;margin-bottom:14px;font-size:12.5px;color:var(--stone);}
+
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--warm);margin:22px 0 14px;flex-wrap:wrap;}
+.tabs button{background:none;border:none;font-family:inherit;font-size:13.5px;font-weight:700;
+color:var(--stone);padding:10px 16px;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;}
+.tabs button:hover{color:var(--sage);}
+.tabs button.active{color:var(--sage-dark);border-bottom-color:var(--sage);}
+.tabpane{display:none;} .tabpane.active{display:block;}
+
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;}
+.col12{grid-column:span 12;} .col8{grid-column:span 8;}
+.col6{grid-column:span 6;} .col4{grid-column:span 4;}
+@media(max-width:1100px){.col8,.col6,.col4{grid-column:span 12;}}
+.panel{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:20px 18px 16px;
+position:relative;overflow:hidden;padding-top:20px;}
+.panel .pt{font-size:15px;font-weight:700;}
+.panel .ph{font-size:11.5px;color:var(--stone);margin-top:2px;margin-bottom:12px;}
+.grid>.panel:not([class*="col"]){grid-column:span 12;}
+.panel .tira{position:absolute;left:0;right:0;top:0;height:4px;background:var(--warm);}
+.panel .tira.resultado{background:var(--sage);}
+.panel .tira.volumen{background:var(--slate);}
+.panel:empty{display:none;}
+.ptop{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;}
+.ptop .seg{margin-left:auto;}
+
+.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;
+color:var(--stone);border-bottom:1px solid var(--warm);padding:8px 6px;white-space:nowrap;}
+th.ord{cursor:pointer;user-select:none;}
+th.ord:hover{color:var(--sage);}
+th .flecha{color:var(--sage);}
+td{padding:8px 6px;border-bottom:1px solid var(--warm-light);white-space:nowrap;}
+td.num,th.num{text-align:right;}
+td.largo{white-space:normal;min-width:220px;}
+tr:hover td{background:var(--warm-light);}
+tfoot td{font-weight:700;border-top:1px solid var(--warm);border-bottom:none;background:#FAFCFB;}
+th.pcp,td.pcp{background:#F3FAF7;}
+tr:hover td.pcp{background:#E7F4EF;}
+.pill,.st{font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;white-space:nowrap;}
+.st.bue{background:#ECFDF5;color:var(--sage);}
+.st.low{background:var(--warm-light);color:var(--stone);}
+.st.rev{background:#FEF3E2;color:var(--taupe);}
+.fpcp{font-family:inherit;font-size:13px;color:#333;border:1px solid var(--warm);border-radius:8px;
+padding:5px 8px;background:#fff;min-height:34px;}
+.fpcp:focus{outline:none;border-color:var(--sage);box-shadow:0 0 0 3px rgba(15,122,90,.12);}
+.fpcp.malo{border-color:var(--rose);background:#FFF7F7;}
+.est{font-size:11px;color:var(--stone);min-height:14px;}
+.est.ok{color:var(--sage);} .est.err{color:var(--rose);font-weight:700;}
+.est button{font-family:inherit;font-size:11px;font-weight:700;color:var(--rose);background:none;border:none;
+text-decoration:underline;cursor:pointer;padding:0;}
+.dif{font-weight:700;color:var(--slate);}
+.link{background:none;border:none;font-family:inherit;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;padding:0;}
+.link:hover{color:var(--sage-dark);text-decoration:underline;}
+.vacio{font-size:13px;color:var(--stone);padding:10px 0;}
+.mas{margin-top:12px;}
+
+details.help{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);
+padding:12px 16px;margin-top:18px;font-size:13px;}
+details.help summary{cursor:pointer;font-weight:700;color:var(--sage-dark);}
+details.help p{color:var(--stone);margin:8px 0 0;}
+details.help ul{color:var(--stone);margin:6px 0 0;padding-left:20px;}
+
+.drop{border:2px dashed var(--warm);border-radius:var(--r);background:var(--card);
+box-shadow:var(--sh);padding:34px 24px;text-align:center;cursor:pointer;transition:.15s;margin-bottom:14px;}
+.drop:hover,.drop.over{border-color:var(--sage);background:var(--warm-light);}
+.drop .big{font-size:16px;font-weight:700;color:#333;margin-bottom:4px;}
+.drop .sm{font-size:12.5px;color:var(--stone);}
+
+/* ===== Ventana de confirmación / nombre ===== */
+.mback{position:fixed;inset:0;background:rgba(14,59,54,.55);z-index:80;display:none;
+align-items:center;justify-content:center;padding:16px;}
+.mback.abierta{display:flex;}
+.modal{background:var(--card);border-radius:var(--r);box-shadow:0 12px 40px rgba(14,59,54,.3);
+width:min(680px,100%);max-height:90vh;overflow-y:auto;position:relative;padding:24px 22px 20px;}
+.modal .tira{position:absolute;left:0;right:0;top:0;height:4px;background:var(--sage);}
+.modal .pt{font-size:17px;font-weight:700;}
+.modal .ph{font-size:12px;color:var(--stone);margin:3px 0 14px;}
+.rgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0;}
+.rcell{background:var(--warm-light);border-radius:10px;padding:10px 12px;}
+.rcell .l{font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--stone);}
+.rcell .v{font-size:26px;font-weight:700;color:var(--sage);line-height:1.1;margin-top:4px;}
+.rcell.neutro .v{color:var(--slate);}
+.rcell .s{font-size:11px;color:var(--stone);margin-top:2px;}
+.modal ul{margin:6px 0 0;padding-left:20px;font-size:13px;}
+.modal .lista{font-size:12.5px;color:#333;}
+.modal .acciones{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap;}
+.modal .campo input{width:100%;font-family:inherit;font-size:14px;border:1px solid var(--warm);
+border-radius:8px;padding:10px 12px;min-height:44px;}
+.modal .campo input:focus{outline:none;border-color:var(--sage);box-shadow:0 0 0 3px rgba(15,122,90,.12);}
+.protege{background:#E7F4EF;color:var(--sage-dark);border-radius:8px;padding:10px 12px;font-size:13px;margin-top:10px;}
+.cuidado{background:#FEF3E2;color:var(--taupe);border-radius:8px;padding:10px 12px;font-size:13px;margin-top:10px;}
+
+/* ===== Ficha de historial ===== */
+.fback{position:fixed;inset:0;background:rgba(14,59,54,.55);z-index:80;display:none;}
+.fback.abierta{display:block;}
+.ficha{position:fixed;top:0;right:0;height:100vh;width:min(760px,92vw);background:var(--warm-light);
+z-index:90;transform:translateX(100%);transition:transform .22s ease;display:flex;flex-direction:column;
+box-shadow:-8px 0 40px rgba(14,59,54,.25);}
+.ficha.abierta{transform:translateX(0);}
+.ficha .fhead{background:var(--petrol);border-bottom:3px solid var(--emer);padding:14px 18px;
+display:flex;align-items:flex-start;gap:12px;flex:none;}
+.ficha .fhead .ft{color:#fff;font-size:17px;font-weight:700;}
+.ficha .fhead .fs{color:#B9CFC9;font-size:11.5px;margin-top:3px;}
+.ficha .cerrar{margin-left:auto;background:none;border:1px solid rgba(255,255,255,.35);color:#fff;
+border-radius:8px;width:40px;height:40px;font-size:18px;cursor:pointer;flex:none;line-height:1;}
+.ficha .fbody{overflow-y:auto;padding:14px 18px 30px;flex:1;-webkit-overflow-scrolling:touch;}
+
+/* ===== Aviso flotante ===== */
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--petrol);color:#fff;
+border-radius:10px;padding:12px 16px;box-shadow:0 8px 30px rgba(14,59,54,.35);z-index:95;display:none;
+gap:12px;align-items:center;flex-wrap:wrap;width:max-content;max-width:min(760px,94vw);font-size:13.5px;}
+.toast.abierta{display:flex;}
+.toast .btn{background:var(--emer);border-color:var(--emer);color:var(--petrol);}
+.toast .x{background:none;border:none;color:#B9CFC9;font-size:18px;cursor:pointer;line-height:1;}
+
+/* ===== TABLET (hasta 900px) ===== */
+@media(max-width:900px){
+  .wrap{padding:14px 14px 36px;}
+  .col12,.col8,.col6,.col4{grid-column:span 12;}
+  .kpis{grid-template-columns:repeat(2,1fr);}
+  .rgrid{grid-template-columns:repeat(2,1fr);}
+}
+
+/* ===== CELULAR (hasta 600px) ===== */
+@media(max-width:600px){
+  body{font-size:13.5px;}
+  .header{min-height:auto;padding:12px 14px;gap:10px;}
+  .header img{height:30px;}
+  .divider{display:none;}
+  .htitle{font-size:15px;}
+  .hstate{margin-left:0;text-align:left;width:100%;}
+  .bar{position:static;flex-wrap:nowrap;overflow-x:auto;padding:8px 10px;gap:8px;-webkit-overflow-scrolling:touch;}
+  .bar::-webkit-scrollbar{display:none;}
+  .bar>*{flex:none;}
+  .btn,select,.seg button,.bar input{min-height:44px;font-size:14px;}
+  .spacer{display:none;}
+  .verdict{padding:14px;gap:12px;}
+  .verdict .dot{width:36px;height:36px;font-size:18px;}
+  .verdict .t{font-size:16px;}
+  .kpis{grid-template-columns:1fr;gap:10px;}
+  .kpi .v,.kpi:not(.hero) .v{font-size:38px;}
+  .kpi:hover{transform:none;box-shadow:var(--sh);}
+  .tabs{flex-wrap:nowrap;overflow-x:auto;gap:0;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tabs button{flex:none;padding:12px 14px;font-size:13px;}
+  .panel{padding:18px 14px 14px;overflow-x:auto;}
+  .ptop .seg{margin-left:0;}
+  table{min-width:520px;}
+  .fpcp{min-height:44px;font-size:14px;}
+  .panel:hover{box-shadow:var(--sh);}
+  .kpi:active{background:var(--warm-light);}
+  .grid,.kpis{grid-template-columns:1fr!important;}
+  .grid>*{grid-column:span 12!important;}
+  .panel.plegable.plegado table,
+  .panel.plegable.plegado .mas,
+  .panel.plegable.plegado .ptop .seg{display:none!important;}
+  .verdet{display:block;width:100%;margin-top:10px;background:#fff;border:1px solid var(--warm);
+          color:var(--sage);border-radius:8px;padding:12px;font-family:inherit;font-size:14px;
+          font-weight:700;cursor:pointer;min-height:44px;}
+  .ficha{width:100vw;}
+  .rgrid{grid-template-columns:1fr 1fr;}
+  .modal{padding:22px 16px 16px;}
+  .modal .acciones .btn{flex:1;min-height:44px;}
+}
+
+@media print{
+  @page{size:A4 landscape;margin:9mm;}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  .bar,.tabs,.no-print,details.help,#drop,.mback,.fback,.ficha,.toast,.verdet,.link,.mas{display:none!important;}
+  body{background:#fff!important;}
+  .wrap{max-width:none;padding:0;}
+  .tabpane{display:block!important;}
+  .panel,.kpi,.insight,.verdict,.note{box-shadow:none;border:1px solid var(--warm);break-inside:avoid;}
+  .kpi.hero{background:#fff!important;}
+  .kpi.hero .v{color:var(--sage)!important;}
+  .kpi.hero .l,.kpi.hero .s{color:var(--stone)!important;}
+  .tscroll{overflow:visible;}
+  td,th{white-space:normal;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <img src="data:image/png;base64,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" alt="LIVES">
+  <div class="divider"></div>
+  <div>
+    <div class="htitle">DESPACHOS · FECHA PCP CON EL CLIENTE</div>
+    <div class="hsub">Reporte Situación de Pedido Global + fecha acordada por PCP</div>
+  </div>
+  <div class="hstate" id="hstate">Cargando…</div>
+</div>
+
+<div class="wrap">
+  <div class="aviso" id="aviso"></div>
+
+  <div class="bar no-print" id="bar">
+    <input type="search" id="q" placeholder="Buscar OP, P.O. o estilo" aria-label="Buscar">
+    <select id="fCliente" aria-label="Cliente"></select>
+    <select id="fMes" aria-label="Mes de FEC. DESPACHO"></select>
+    <div class="seg" id="segPCP">
+      <button type="button" data-v="todas" class="active">Todas</button>
+      <button type="button" data-v="con">Con fecha PCP</button>
+      <button type="button" data-v="sin">Sin fecha PCP</button>
+    </div>
+    <select id="fCarga" aria-label="Última carga">
+      <option value="">Todas las OP guardadas</option>
+      <option value="SI">Vinieron en la última carga</option>
+      <option value="NO">No vinieron en la última carga</option>
+    </select>
+    <span class="spacer"></span>
+    <label class="quien" id="quien">Registra <input type="text" id="usuario" placeholder="Tu nombre" maxlength="60"></label>
+    <button type="button" class="btn" id="btnExcel">Descargar Excel</button>
+    <button type="button" class="btn primary" id="btnSubir">Subir archivo actualizado</button>
+    <input type="file" id="file" accept=".xlsx,.xls" hidden>
+  </div>
+
+  <div class="drop" id="drop" style="display:none">
+    <div class="big">Sube el reporte Situación de Pedido Global (DESPACHOS_….xlsx)</div>
+    <div class="sm">Arrastra el Excel aquí o toca para elegirlo. Si tiene filtros puestos, solo se toman las filas visibles.</div>
+  </div>
+
+  <div id="contenido" style="display:none">
+    <div class="verdict" id="verdict"><div class="dot">i</div><div><div class="t"></div><div class="s"></div></div></div>
+    <div class="kpis" id="kpis"></div>
+    <div class="insight" id="insight"></div>
+    <div class="note" id="nota"></div>
+
+    <div class="tabs no-print">
+      <button type="button" class="active" onclick="tab(0,this)">OP y fecha PCP</button>
+      <button type="button" onclick="tab(1,this)">Cargas realizadas</button>
+    </div>
+
+    <div class="tabpane active">
+      <div class="grid">
+        <div class="panel col12" id="pOP">
+          <span class="tira resultado"></span>
+          <div class="ptop">
+            <div>
+              <div class="pt">OP del reporte y su fecha PCP</div>
+              <div class="ph" id="phOP"></div>
+            </div>
+            <div class="seg" id="segCols">
+              <button type="button" data-v="resumen" class="active">Columnas clave</button>
+              <button type="button" data-v="todas">Todas las columnas</button>
+            </div>
+          </div>
+          <div class="tscroll" id="tOP"></div>
+          <div class="mas" id="masOP"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabpane">
+      <div class="grid">
+        <div class="panel col12" id="pCargas">
+          <span class="tira volumen"></span>
+          <div class="pt">Cargas realizadas</div>
+          <div class="ph">Cada archivo subido queda registrado. <b>Nuevas</b>: OP que no existían. <b>Actualizadas</b>: OP que ya existían y trajeron algún dato distinto. <b>Sin cambios</b>: vinieron igual. <b>No vinieron</b>: no estaban en ese archivo y se conservaron.</div>
+          <div class="tscroll" id="tCargas"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <details class="help">
+    <summary>¿Cómo leo esta herramienta?</summary>
+    <p><b>Qué es una fila.</b> Una OP (orden de producción) del reporte Situación de Pedido Global del sistema. La OP es la llave: no puede repetirse dentro de un mismo archivo.</p>
+    <p><b>FEC. DESPACHO vs. FECHA PCP.</b> FEC. DESPACHO es la fecha que trae el sistema y nunca se edita aquí. FECHA PCP es la fecha que PCP acordó con el cliente; se escribe en la tabla y se guarda sola.</p>
+    <p><b>Qué pasa al subir un archivo actualizado.</b></p>
+    <ul>
+      <li>OP nueva: se agrega.</li>
+      <li>OP que ya estaba: se refrescan los datos del sistema (pedido, exportadas, FEC. DESPACHO, etc.). Si cambió la FEC. DESPACHO, queda en el historial de la OP.</li>
+      <li>OP que no vino (por ejemplo, porque se filtró el Excel): no se borra; se conserva con los datos de la última vez que vino.</li>
+      <li>La FECHA PCP no se toca nunca con una carga.</li>
+      <li>Se ignoran las filas ocultas por filtro y las filas «Total» y «Porc» del reporte. La fila Total del sistema no cuadra con la suma de sus filas, por eso los totales de esta herramienta se calculan aquí.</li>
+    </ul>
+    <p><b>DIF. (días).</b> FECHA PCP menos FEC. DESPACHO, en días calendario. Positivo: la fecha PCP es posterior a la del sistema; negativo: es anterior. Solo se calcula cuando existen las dos fechas.</p>
+    <p><b>% EXPORTADAS.</b> En cada fila viene del sistema y es exportadas ÷ pedido de esa OP. En el total de la tabla se calcula ponderado: suma de exportadas ÷ suma de pedido de las OP que estás viendo, nunca promediando porcentajes.</p>
+    <p><b>Aplicar a toda la P.O.</b> Al guardar una fecha PCP, si esa P.O. (del mismo cliente) tiene otras OP, aparece un botón para ponerles la misma fecha. Si alguna ya tenía otra fecha PCP, se pide confirmación antes de reemplazarla.</p>
+    <p><b>Sin meta.</b> No hay meta declarada, así que la herramienta no califica como bien o mal. Solo cuenta cuántas OP tienen fecha PCP y cuántas difieren de la del sistema.</p>
+    <p><b>Historial.</b> Cada cambio de FECHA PCP guarda la fecha anterior, la nueva, quién la registró y cuándo.</p>
+  </details>
+</div>
+
+<!-- Ventana: vista previa de la carga -->
+<div class="mback" id="mPrev">
+  <div class="modal" role="dialog" aria-modal="true">
+    <span class="tira"></span>
+    <div class="pt">Revisa antes de guardar</div>
+    <div class="ph" id="prevArchivo"></div>
+    <div id="prevCuerpo"></div>
+    <div class="acciones">
+      <button type="button" class="btn" id="prevCancelar">Cancelar</button>
+      <button type="button" class="btn primary" id="prevConfirmar">Confirmar carga</button>
+    </div>
+  </div>
+</div>
+
+<!-- Ventana: nombre de quien registra -->
+<div class="mback" id="mNombre">
+  <div class="modal" role="dialog" aria-modal="true" style="width:min(440px,100%)">
+    <span class="tira"></span>
+    <div class="pt">¿Quién registra?</div>
+    <div class="ph">Tu nombre queda en el historial de cada cambio. Se recuerda en este equipo.</div>
+    <div class="campo"><input type="text" id="nombreInput" maxlength="60" placeholder="Nombre y apellido"></div>
+    <div class="est err" id="nombreMsg"></div>
+    <div class="acciones">
+      <button type="button" class="btn" id="nombreCancelar">Cancelar</button>
+      <button type="button" class="btn primary" id="nombreOk">Continuar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Ficha: historial de una OP -->
+<div class="fback" id="fback"></div>
+<div class="ficha" id="ficha" aria-hidden="true">
+  <div class="fhead">
+    <div><div class="ft" id="fTitulo">Historial</div><div class="fs" id="fSub"></div></div>
+    <button type="button" class="cerrar" id="fCerrar" aria-label="Cerrar">✕</button>
+  </div>
+  <div class="fbody">
+    <div class="panel"><span class="tira"></span>
+      <div class="pt">Cambios registrados</div>
+      <div class="ph">Del más reciente al más antiguo. Incluye cambios de FECHA PCP y de FEC. DESPACHO traídos por una carga.</div>
+      <div class="tscroll" id="fTabla"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="toastTxt"></span><span id="toastAcc"></span><button type="button" class="x" id="toastX" aria-label="Cerrar">✕</button></div>
+
+<script>
+/* ==========================================================================
+   DESPACHOS PCP · LIVES
+   Solo se toca CFG.endpoint: la URL /exec de la Aplicación web de Apps Script.
+   Vacío = modo prueba (nada se guarda).
+   ========================================================================== */
+const CFG = {
+  endpoint: "https://script.google.com/macros/s/AKfycbxc9-YGXQoKdRa6J4eDSXPyurDkhH8Fzl9j5dB_j3dEvwUKENVQ41fEiJFiMebwQoukYw/exec"
+};
+
+/* ==========================================================================
+   LÓGICA DE FUSIÓN DE CARGAS — idéntica en despachos_pcp.html y en Codigo.gs
+   Regla acordada:
+   · OP nueva            → se agrega.
+   · OP que ya existe    → se refrescan los datos del sistema.
+   · OP que no vino      → se conserva, marcada EN_ULTIMA_CARGA = NO.
+   · FECHA PCP           → vive en otra hoja (FECHAS_PCP); ninguna carga la toca.
+   ========================================================================== */
+var COLS_CONTROL = ['PRIMERA_CARGA', 'ULTIMA_VEZ_VISTA', 'EN_ULTIMA_CARGA'];
+var COLS_REQUERIDAS = ['OP', 'CLIENTE', 'P.O.', 'FEC. DESPACHO', 'PEDIDO', 'EXPORTADAS'];
+
+function normHeader(h) {
+  return String(h == null ? '' : h).replace(/\s+/g, ' ').trim().toUpperCase();
+}
+
+function valStr(v) {
+  if (v === null || v === undefined) return '';
+  if (typeof v === 'number') return isFinite(v) ? String(Math.round(v * 1e6) / 1e6) : '';
+  return String(v).trim();
+}
+
+/* Revisa que la carga sea el reporte correcto y que no traiga OP repetidas. */
+function validarCarga(carga) {
+  var errores = [];
+  if (!carga || !carga.cols || !carga.rows) return ['La carga llegó vacía.'];
+  var faltan = COLS_REQUERIDAS.filter(function (c) { return carga.cols.indexOf(c) < 0; });
+  if (faltan.length) {
+    errores.push('Al archivo le faltan las columnas ' + faltan.join(', ') +
+      '. No parece el reporte Situación de Pedido Global.');
+    return errores;
+  }
+  if (!carga.rows.length) errores.push('El archivo no trae ninguna OP visible.');
+  var iOP = carga.cols.indexOf('OP'), cuenta = {};
+  carga.rows.forEach(function (r) {
+    var op = valStr(r[iOP]);
+    if (op) cuenta[op] = (cuenta[op] || 0) + 1;
+  });
+  var dup = Object.keys(cuenta).filter(function (k) { return cuenta[k] > 1; });
+  if (dup.length) {
+    errores.push('La OP ' + dup.slice(0, 10).join(', ') + (dup.length > 10 ? ' (y ' + (dup.length - 10) + ' más)' : '') +
+      ' aparece más de una vez en el archivo. Corrige el Excel antes de subirlo.');
+  }
+  return errores;
+}
+
+/* Fusiona una carga sobre la base. No modifica los arreglos recibidos. */
+function fusionarCarga(base, carga, ahora) {
+  var sys = base.cols.filter(function (c) { return COLS_CONTROL.indexOf(c) < 0; });
+  carga.cols.forEach(function (c) { if (c && sys.indexOf(c) < 0) sys.push(c); });
+  var cols = sys.concat(COLS_CONTROL);
+
+  var oldIx = {}; base.cols.forEach(function (c, i) { oldIx[c] = i; });
+  var ix = {}; cols.forEach(function (c, i) { ix[c] = i; });
+  var rows = base.rows.map(function (r) {
+    return cols.map(function (c) {
+      var i = oldIx[c];
+      return (i != null && r[i] != null) ? r[i] : '';
+    });
+  });
+
+  var cix = {}; carga.cols.forEach(function (c, i) { if (c) cix[c] = i; });
+  var cargaCols = Object.keys(cix);
+  var pos = {}; rows.forEach(function (r, i) { pos[valStr(r[ix['OP']])] = i; });
+  var visto = {};
+  var res = { nuevas: [], actualizadas: [], sinCambios: 0, noVinieron: [], dejanDeVenir: [], cambiosDespacho: [] };
+
+  carga.rows.forEach(function (fr) {
+    var op = valStr(fr[cix['OP']]);
+    if (!op) return;
+    visto[op] = 1;
+    var i = pos[op];
+    if (i == null) {
+      var nr = cols.map(function (c) {
+        var k = cix[c];
+        return (k != null && fr[k] != null) ? fr[k] : '';
+      });
+      nr[ix['PRIMERA_CARGA']] = ahora;
+      nr[ix['ULTIMA_VEZ_VISTA']] = ahora;
+      nr[ix['EN_ULTIMA_CARGA']] = 'SI';
+      pos[op] = rows.length;
+      rows.push(nr);
+      res.nuevas.push(op);
+    } else {
+      var r = rows[i], cambio = false;
+      cargaCols.forEach(function (c) {
+        var nv = fr[cix[c]];
+        if (nv == null) nv = '';
+        if (valStr(nv) !== valStr(r[ix[c]])) {
+          if (c === 'FEC. DESPACHO') res.cambiosDespacho.push({ op: op, antes: valStr(r[ix[c]]), despues: valStr(nv) });
+          r[ix[c]] = nv;
+          cambio = true;
+        }
+      });
+      r[ix['ULTIMA_VEZ_VISTA']] = ahora;
+      r[ix['EN_ULTIMA_CARGA']] = 'SI';
+      if (cambio) res.actualizadas.push(op); else res.sinCambios++;
+    }
+  });
+
+  rows.forEach(function (r) {
+    var op = valStr(r[ix['OP']]);
+    if (op && !visto[op]) {
+      if (valStr(r[ix['EN_ULTIMA_CARGA']]) !== 'NO') res.dejanDeVenir.push(op);
+      r[ix['EN_ULTIMA_CARGA']] = 'NO';
+      res.noVinieron.push(op);
+    }
+  });
+
+  return { cols: cols, rows: rows, res: res };
+}
+
+
+const CAB_CARGAS = ['ID_CARGA','FECHA_HORA','ARCHIVO','USUARIO','OP_EN_ARCHIVO','NUEVAS','ACTUALIZADAS','SIN_CAMBIOS','NO_VINIERON','CAMBIOS_FEC_DESPACHO'];
+const COLS_CLAVE = ['OP','CLIENTE','P.O.','ESTILO CLIENTE','CATEG. PRENDA','PEDIDO','EXPORTADAS','% EXPORTADAS','FEC. DESPACHO'];
+const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov','Dic'];
+const LIMITE_FILAS = 400;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2, '0');
+const fmtN = (v, dec) => (v == null || !isFinite(v)) ? '—' :
+  Number(v).toLocaleString('es-PE', {minimumFractionDigits: dec || 0, maximumFractionDigits: dec == null ? 2 : dec});
+const pct = (a, b) => b ? (a / b * 100) : null;
+
+/* ---------- Estado ---------- */
+let S = {cols: [], rows: [], ix: {}, items: [], pcp: {}, histN: {}, cargas: [], ahora: ''};
+const V = {q: '', cliente: '', mes: '', pcp: 'todas', carga: '', colsModo: 'resumen', sort: {col: 'FEC. DESPACHO', dir: 1}, limite: LIMITE_FILAS};
+let PENDIENTE = null;       // carga leída esperando confirmación
+const MEM = {base: {cols: [], rows: []}, pcp: {}, hist: [], cargas: []};   // solo modo prueba
+
+/* ---------- Fechas ---------- */
+function parseFecha(s) {
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(valStr(s));
+  if (!m) return null;
+  const t = Date.UTC(+m[3], +m[2] - 1, +m[1]);
+  const d = new Date(t);
+  return (d.getUTCDate() === +m[1] && d.getUTCMonth() === +m[2] - 1) ? t : null;
+}
+const isoAFecha = iso => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; };
+const fechaAIso = f => { const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(valStr(f)); return m ? m[3] + '-' + m[2] + '-' + m[1] : ''; };
+function ahoraLocal() { const d = new Date(); return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+function toNum(v) {
+  if (typeof v === 'number') return isFinite(v) ? v : null;
+  const s = valStr(v).replace(/,/g, '');
+  if (s === '' || s === '-') return null;
+  const n = Number(s);
+  return isFinite(n) ? n : null;
+}
+
+/* ---------- Nombre de quien registra ---------- */
+function nombreGuardado() { try { return localStorage.getItem('despachosPCP.usuario') || ''; } catch (e) { return ''; } }
+function guardarNombre(n) { try { localStorage.setItem('despachosPCP.usuario', n); } catch (e) {} }
+function pedirNombre() {
+  return new Promise(resolve => {
+    const m = $('mNombre'), inp = $('nombreInput');
+    inp.value = $('usuario').value.trim(); $('nombreMsg').textContent = '';
+    m.classList.add('abierta'); setTimeout(() => inp.focus(), 50);
+    const cerrar = v => { m.classList.remove('abierta'); $('nombreOk').onclick = $('nombreCancelar').onclick = inp.onkeydown = null; resolve(v); };
+    $('nombreOk').onclick = () => {
+      const v = inp.value.trim();
+      if (!v) { $('nombreMsg').textContent = 'Escribe tu nombre para continuar.'; return; }
+      $('usuario').value = v; guardarNombre(v); $('quien').classList.remove('falta'); cerrar(v);
+    };
+    $('nombreCancelar').onclick = () => cerrar(null);
+    inp.onkeydown = e => { if (e.key === 'Enter') $('nombreOk').onclick(); if (e.key === 'Escape') cerrar(null); };
+  });
+}
+async function asegurarUsuario() {
+  const v = $('usuario').value.trim();
+  if (v) { guardarNombre(v); return v; }
+  $('quien').classList.add('falta');
+  return pedirNombre();
+}
+
+/* ---------- Comunicación con el servidor ---------- */
+function jsonp(params) {
+  return new Promise((resolve, reject) => {
+    const cb = '__desp' + Date.now() + Math.floor(Math.random() * 1e6);
+    const s = document.createElement('script');
+    const limpiar = () => { clearTimeout(t); delete window[cb]; s.remove(); };
+    const t = setTimeout(() => { limpiar(); reject(new Error('El servidor no respondió a tiempo.')); }, 45000);
+    window[cb] = d => { limpiar(); resolve(d); };
+    s.onerror = () => { limpiar(); reject(new Error('No se pudo conectar con el servidor.')); };
+    const qs = new URLSearchParams(Object.assign({}, params, {callback: cb, _: Date.now()}));
+    s.src = CFG.endpoint + (CFG.endpoint.indexOf('?') >= 0 ? '&' : '?') + qs.toString();
+    document.head.appendChild(s);
+  });
+}
+async function post(obj) {
+  let r;
+  try {
+    r = await fetch(CFG.endpoint, {method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify(obj)});
+  } catch (e) { throw new Error('No se pudo conectar con el servidor. Revisa tu conexión.'); }
+  let j;
+  try { j = await r.json(); } catch (e) { throw new Error('El servidor respondió algo inesperado.'); }
+  if (!j.ok) throw new Error(j.error || 'El servidor rechazó la operación.');
+  return j;
+}
+const clonar = o => JSON.parse(JSON.stringify(o));
+const API = {
+  prueba: () => !CFG.endpoint,
+  async listar() {
+    if (API.prueba()) {
+      const histN = {};
+      MEM.hist.forEach(h => { histN[h[1]] = (histN[h[1]] || 0) + 1; });
+      return {ok: true, ahora: ahoraLocal(), base: clonar(MEM.base), pcp: clonar(MEM.pcp), histN, cargas: MEM.cargas.slice().reverse()};
+    }
+    const j = await jsonp({accion: 'listar'});
+    if (!j || !j.ok) throw new Error((j && j.error) || 'No se pudo leer la base.');
+    return j;
+  },
+  async cargar(p) {
+    if (API.prueba()) {
+      const carga = {cols: p.cols, rows: p.rows};
+      const errs = validarCarga(carga);
+      if (errs.length) throw new Error(errs.join(' '));
+      const ahora = ahoraLocal();
+      const f = fusionarCarga(MEM.base, carga, ahora);
+      MEM.base = {cols: f.cols, rows: f.rows};
+      const id = 'PRUEBA-' + (MEM.cargas.length + 1);
+      const r = f.res;
+      MEM.cargas.push([id, ahora, p.archivo, p.usuario, String(p.rows.length), String(r.nuevas.length), String(r.actualizadas.length), String(r.sinCambios), String(r.noVinieron.length), String(r.cambiosDespacho.length)]);
+      r.cambiosDespacho.forEach(c => MEM.hist.push([ahora, c.op, 'FEC. DESPACHO', c.antes, c.despues, p.usuario, 'CARGA ' + id]));
+      return {ok: true, id, res: {nuevas: r.nuevas.length, actualizadas: r.actualizadas.length, sinCambios: r.sinCambios, noVinieron: r.noVinieron.length, dejanDeVenir: r.dejanDeVenir.length, cambiosDespacho: r.cambiosDespacho.length}};
+    }
+    return post(Object.assign({accion: 'cargar'}, p));
+  },
+  async fechaPCP(p) {
+    if (API.prueba()) {
+      const ahora = ahoraLocal(); let cambiadas = 0;
+      p.ops.forEach(op => {
+        const antes = MEM.pcp[op] ? MEM.pcp[op][0] : '';
+        if (antes === p.fecha) return;
+        MEM.pcp[op] = [p.fecha, ahora, p.usuario];
+        MEM.hist.push([ahora, op, 'FECHA PCP', antes, p.fecha, p.usuario, p.origen || 'MANUAL']);
+        cambiadas++;
+      });
+      return {ok: true, ahora, cambiadas, sinCambio: p.ops.length - cambiadas};
+    }
+    return post(Object.assign({accion: 'fechaPCP'}, p));
+  },
+  async historial(op) {
+    if (API.prueba()) return {ok: true, op, filas: MEM.hist.filter(h => h[1] === op).reverse()};
+    const j = await jsonp({accion: 'historial', op});
+    if (!j || !j.ok) throw new Error((j && j.error) || 'No se pudo leer el historial.');
+    return j;
+  }
+};
+
+/* ---------- Avisos ---------- */
+function aviso(txt, tipo) { const a = $('aviso'); a.className = 'aviso' + (txt ? ' ' + tipo : ''); a.innerHTML = txt || ''; }
+let toastTimer = null;
+function toast(txt, accionHtml, ms) {
+  $('toastTxt').innerHTML = txt; $('toastAcc').innerHTML = accionHtml || '';
+  $('toast').classList.add('abierta');
+  clearTimeout(toastTimer);
+  if (ms !== 0) toastTimer = setTimeout(cerrarToast, ms || 6000);
+}
+function cerrarToast() { $('toast').classList.remove('abierta'); $('toastAcc').innerHTML = ''; }
+$('toastX').onclick = cerrarToast;
+
+/* ---------- Carga inicial ---------- */
+async function recargar() {
+  try {
+    const j = await API.listar();
+    S.cols = (j.base && j.base.cols) || [];
+    S.rows = (j.base && j.base.rows) || [];
+    S.pcp = j.pcp || {};
+    S.histN = j.histN || {};
+    S.cargas = j.cargas || [];
+    S.ahora = j.ahora || '';
+    S.ix = {}; S.cols.forEach((c, i) => { S.ix[c] = i; });
+    const g = c => S.ix[c];
+    S.items = S.rows.map(r => {
+      const desp = g('FEC. DESPACHO') != null ? r[g('FEC. DESPACHO')] : '';
+      const t = parseFecha(desp);
+      return {
+        r, op: valStr(r[g('OP')]), cliente: valStr(g('CLIENTE') != null ? r[g('CLIENTE')] : ''),
+        po: valStr(g('P.O.') != null ? r[g('P.O.')] : ''), desp: t,
+        mes: t != null ? new Date(t).toISOString().slice(0, 7) : '',
+        enUlt: valStr(g('EN_ULTIMA_CARGA') != null ? r[g('EN_ULTIMA_CARGA')] : ''),
+        busca: ['OP','P.O.','ESTILO CLIENTE','ESTILO LIVES','GRUPO PROD.'].map(c => g(c) != null ? valStr(r[g(c)]) : '').join(' ').toUpperCase()
+      };
+    });
+    armarFiltros();
+    render();
+    return true;
+  } catch (e) {
+    aviso('No se pudo leer la base: ' + esc(e.message) + ' <button class="btn chico" onclick="recargar()">Reintentar</button>', 'error');
+    $('hstate').textContent = 'Sin conexión con la base';
+    return false;
+  }
+}
+
+function armarFiltros() {
+  const clientes = [...new Set(S.items.map(i => i.cliente).filter(Boolean))].sort();
+  const selC = $('fCliente');
+  selC.innerHTML = '<option value="">Todos los clientes</option>' + clientes.map(c => '<option' + (c === V.cliente ? ' selected' : '') + '>' + esc(c) + '</option>').join('');
+  if (V.cliente && clientes.indexOf(V.cliente) < 0) V.cliente = '';
+  const meses = [...new Set(S.items.map(i => i.mes).filter(Boolean))].sort();
+  const sinFecha = S.items.some(i => !i.mes);
+  $('fMes').innerHTML = '<option value="">Todos los meses de despacho</option>' +
+    meses.map(m => '<option value="' + m + '"' + (m === V.mes ? ' selected' : '') + '>Despacho ' + MESES[+m.slice(5) - 1] + ' ' + m.slice(0, 4) + '</option>').join('') +
+    (sinFecha ? '<option value="__sin"' + (V.mes === '__sin' ? ' selected' : '') + '>Sin FEC. DESPACHO</option>' : '');
+  if (V.mes && V.mes !== '__sin' && meses.indexOf(V.mes) < 0) V.mes = '';
+}
+
+/* ---------- Filtro y orden ---------- */
+const fechaPCPde = op => (S.pcp[op] && S.pcp[op][0]) || '';
+function difDias(it) {
+  const p = parseFecha(fechaPCPde(it.op));
+  if (p == null || it.desp == null) return null;
+  return Math.round((p - it.desp) / 864e5);
+}
+function filtrar() {
+  const q = V.q.trim().toUpperCase();
+  return S.items.filter(it => {
+    if (q && it.busca.indexOf(q) < 0) return false;
+    if (V.cliente && it.cliente !== V.cliente) return false;
+    if (V.mes === '__sin' && it.mes) return false;
+    if (V.mes && V.mes !== '__sin' && it.mes !== V.mes) return false;
+    const tiene = !!fechaPCPde(it.op);
+    if (V.pcp === 'con' && !tiene) return false;
+    if (V.pcp === 'sin' && tiene) return false;
+    if (V.carga && it.enUlt !== V.carga) return false;
+    return true;
+  });
+}
+function valorOrden(it, col) {
+  if (col === '__PCP') return parseFecha(fechaPCPde(it.op));
+  if (col === '__DIF') return difDias(it);
+  if (col === '__CARGA') return it.enUlt;
+  const i = S.ix[col]; if (i == null) return null;
+  const v = it.r[i];
+  if (/^FEC/.test(col)) return parseFecha(v);
+  if (typeof v === 'number') return v;
+  const n = toNum(v);
+  if (n != null && col !== 'OP' && col !== 'P.O.' && /^[\d.,\-]+$/.test(valStr(v))) return n;
+  return valStr(v).toUpperCase();
+}
+function ordenar(lista) {
+  const {col, dir} = V.sort;
+  return lista.slice().sort((a, b) => {
+    const x = valorOrden(a, col), y = valorOrden(b, col);
+    if (x == null && y == null) return a.op < b.op ? -1 : 1;
+    if (x == null) return 1;
+    if (y == null) return -1;
+    if (x < y) return -dir;
+    if (x > y) return dir;
+    return a.op < b.op ? -1 : 1;
+  });
+}
+
+/* ---------- Render ---------- */
+function render() {
+  const hay = S.items.length > 0;
+  const ult = S.cargas[0];
+  $('hstate').innerHTML = ult
+    ? 'Última carga: ' + esc(ult[1]) + ' · ' + esc(ult[3]) + '<br>' + fmtN(S.items.length) + ' OP guardadas' + (API.prueba() ? ' · MODO PRUEBA' : '')
+    : 'Sin cargas todavía' + (API.prueba() ? ' · MODO PRUEBA' : '');
+  $('drop').style.display = hay ? 'none' : '';
+  $('contenido').style.display = hay ? '' : 'none';
+  $('btnExcel').style.display = hay ? '' : 'none';
+  if (!hay) return;
+  const lista = ordenar(filtrar());
+  renderResumen(lista);
+  renderTabla(lista);
+  renderCargas();
+  reajustarGrids();
+}
+
+function kpiHtml(cls, l, v, s) {
+  return '<div class="kpi ' + cls + '"><span class="banda"></span><div class="cuerpo"><div class="l">' + l +
+    '</div><div class="row"><span class="v">' + v + '</span></div><div class="s">' + s + '</div></div></div>';
+}
+
+function renderResumen(lista) {
+  const N = lista.length;
+  const vd = $('verdict');
+  const conPCP = lista.filter(it => fechaPCPde(it.op));
+  const X = conPCP.length, Y = N - X;
+  if (!N) {
+    vd.className = 'verdict';
+    vd.querySelector('.t').textContent = 'No hay OP con estos filtros';
+    vd.querySelector('.s').textContent = 'Cambia la búsqueda, el cliente, el mes o el estado en la barra de arriba.';
+    $('kpis').style.display = 'none'; $('insight').style.display = 'none';
+  } else {
+    $('kpis').style.display = '';
+    if (X === N) {
+      vd.className = 'verdict ok'; vd.querySelector('.dot').textContent = '✓';
+      vd.querySelector('.t').textContent = 'Todas las OP de la vista tienen fecha PCP acordada';
+      vd.querySelector('.s').textContent = 'No queda ninguna por definir con estos filtros. No hay meta fijada, así que no se califica como bien o mal.';
+    } else if (X === 0) {
+      vd.className = 'verdict'; vd.querySelector('.dot').textContent = 'i';
+      vd.querySelector('.t').textContent = 'Ninguna OP de la vista tiene fecha PCP todavía';
+      vd.querySelector('.s').textContent = 'Escríbela en la columna FECHA PCP de la tabla; la FEC. DESPACHO del sistema no se toca. No hay meta fijada, así que no se califica como bien o mal.';
+    } else {
+      vd.className = 'verdict'; vd.querySelector('.dot').textContent = 'i';
+      vd.querySelector('.t').textContent = 'Hay OP de la vista sin fecha PCP acordada';
+      vd.querySelector('.s').textContent = 'Elige «Sin fecha PCP» en la barra de arriba para completarlas. No hay meta fijada, así que no se califica como bien o mal.';
+    }
+
+    const ambas = conPCP.map(difDias).filter(d => d != null);
+    const nPost = ambas.filter(d => d > 0).length, nAnt = ambas.filter(d => d < 0).length;
+    const sinDesp = X - ambas.length;
+    const M = lista.filter(it => it.enUlt === 'NO').length;
+    let k = kpiHtml('hero', 'OP con fecha PCP', fmtN(X), 'de ' + fmtN(N) + ' OP en la vista · ' + fmtN(pct(X, N), 1) + '% de ellas');
+    if (X > 0) {
+      k += kpiHtml('neutro', 'Fecha PCP distinta a la del sistema', fmtN(nPost + nAnt),
+        fmtN(nPost) + ' posterior' + (nPost === 1 ? '' : 'es') + ' y ' + fmtN(nAnt) + ' anterior' + (nAnt === 1 ? '' : 'es') + ' a la FEC. DESPACHO' +
+        (sinDesp > 0 ? ' · ' + fmtN(sinDesp) + ' sin FEC. DESPACHO para comparar' : ''));
+    }
+    k += kpiHtml('neutro', 'No vinieron en la última carga', fmtN(M), 'se conservan con los datos de la última vez que vinieron');
+    $('kpis').innerHTML = k;
+
+    // Insight: dónde se concentran las OP sin fecha PCP
+    const ins = $('insight');
+    if (Y > 0) {
+      const porCli = {};
+      const sin = lista.filter(it => !fechaPCPde(it.op));
+      sin.forEach(it => { porCli[it.cliente || '(sin cliente)'] = (porCli[it.cliente || '(sin cliente)'] || 0) + 1; });
+      const top = Object.entries(porCli).sort((a, b) => b[1] - a[1])[0];
+      const gruposPO = {};
+      S.items.forEach(it => { const kk = it.cliente + '|' + it.po; gruposPO[kk] = (gruposPO[kk] || 0) + 1; });
+      const poSin = new Set(sin.filter(it => gruposPO[it.cliente + '|' + it.po] > 1).map(it => it.cliente + '|' + it.po)).size;
+      let txt = 'De las <b>' + fmtN(Y) + ' OP sin fecha PCP</b>, <b>' + fmtN(top[1]) + '</b> son de <b>' + esc(top[0]) + '</b> (' + fmtN(pct(top[1], Y), 1) + '% de las que faltan).';
+      if (poSin > 0) txt += ' <b>' + fmtN(poSin) + ' P.O.</b> con OP pendientes tienen varias OP: al guardar la fecha en una, usa «Aplicar a toda la P.O.».';
+      ins.innerHTML = txt; ins.style.display = '';
+    } else { ins.style.display = 'none'; }
+  }
+
+  const ult = S.cargas[0];
+  $('nota').innerHTML = 'Fuente: reporte Situación de Pedido Global del sistema, subido en esta herramienta' +
+    (ult ? ' (último archivo: ' + esc(ult[2]) + ', ' + fmtN(+ult[4]) + ' OP visibles)' : '') +
+    '. La FECHA PCP la escribe PCP aquí y ninguna carga la modifica.';
+}
+
+function columnasVista() {
+  const sys = S.cols.filter(c => COLS_CONTROL.indexOf(c) < 0);
+  let base = V.colsModo === 'resumen' ? COLS_CLAVE.filter(c => S.ix[c] != null) : sys.slice();
+  const i = base.indexOf('FEC. DESPACHO');
+  const extra = ['__PCP', '__DIF'];
+  if (i >= 0) base.splice(i + 1, 0, ...extra); else base = base.concat(extra);
+  return base.concat(['__CARGA', '__HIST']);
+}
+const ETIQ = {'__PCP': 'Fecha PCP', '__DIF': 'Dif. (días)', '__CARGA': 'Última carga', '__HIST': ''};
+const NUMERICA = c => {
+  if (c === '__DIF') return true;
+  const i = S.ix[c]; if (i == null) return false;
+  return S.items.some(it => typeof it.r[i] === 'number') && !/^FEC/.test(c) && c !== 'OP';
+};
+
+function celda(it, c) {
+  if (c === '__PCP') {
+    const f = fechaPCPde(it.op);
+    return '<td class="pcp"><input type="date" class="fpcp" data-op="' + esc(it.op) + '" value="' + fechaAIso(f) + '" data-previo="' + esc(f) + '" aria-label="Fecha PCP de la OP ' + esc(it.op) + '"><div class="est" data-est="' + esc(it.op) + '"></div></td>';
+  }
+  if (c === '__DIF') {
+    const d = difDias(it);
+    return '<td class="num" data-dif="' + esc(it.op) + '">' + (d == null ? '—' : '<span class="dif">' + (d > 0 ? '+' : d < 0 ? '−' : '') + fmtN(Math.abs(d)) + '</span>') + '</td>';
+  }
+  if (c === '__CARGA') {
+    const iU = S.ix['ULTIMA_VEZ_VISTA'], iP = S.ix['PRIMERA_CARGA'];
+    const ultima = iU != null ? valStr(it.r[iU]) : '', primera = iP != null ? valStr(it.r[iP]) : '';
+    const tit = 'Primera carga: ' + primera + ' · Última vez que vino: ' + ultima;
+    return '<td title="' + esc(tit) + '">' + (it.enUlt === 'NO'
+      ? '<span class="st low">No vino · última ' + esc(ultima.slice(0, 10)) + '</span>'
+      : '<span class="st bue">Vino</span>') + '</td>';
+  }
+  if (c === '__HIST') {
+    const n = S.histN[it.op] || 0;
+    return '<td><button type="button" class="link" data-hist="' + esc(it.op) + '">Historial' + (n ? ' (' + n + ')' : '') + '</button></td>';
+  }
+  const v = it.r[S.ix[c]];
+  if (typeof v === 'number') {
+    const dec = Number.isInteger(v) ? 0 : 2;
+    return '<td class="num">' + fmtN(v, dec) + '</td>';
+  }
+  return '<td' + (c === 'RUTA PRENDA' ? ' class="largo"' : '') + '>' + esc(valStr(v)) + '</td>';
+}
+
+function renderTabla(lista) {
+  const cols = columnasVista();
+  const N = lista.length;
+  $('phOP').innerHTML = 'Una fila por OP. <b>FEC. DESPACHO</b> viene del sistema; <b>FECHA PCP</b> es la acordada con el cliente y se guarda al elegirla. ' +
+    '<b>Dif. (días)</b> = fecha PCP − FEC. DESPACHO. El total de % EXPORTADAS es suma de exportadas ÷ suma de pedido de las OP en la vista.';
+  if (!N) {
+    $('tOP').innerHTML = '<div class="vacio">No hay OP que mostrar con estos filtros.</div>';
+    $('masOP').innerHTML = '';
+    return;
+  }
+  const visibles = lista.slice(0, V.limite);
+  let h = '<table><thead><tr>';
+  cols.forEach(c => {
+    const ord = c !== '__HIST';
+    const flecha = V.sort.col === c ? ' <span class="flecha">' + (V.sort.dir > 0 ? '▲' : '▼') + '</span>' : '';
+    const cls = [ord ? 'ord' : '', NUMERICA(c) ? 'num' : '', c === '__PCP' ? 'pcp' : ''].filter(Boolean).join(' ');
+    h += '<th' + (cls ? ' class="' + cls + '"' : '') + (ord ? ' data-sort="' + esc(c) + '"' : '') + '>' + esc(ETIQ[c] != null ? ETIQ[c] : c) + flecha + '</th>';
+  });
+  h += '</tr></thead><tbody>';
+  visibles.forEach(it => {
+    h += '<tr>' + cols.map(c => celda(it, c)).join('') + '</tr>';
+  });
+  h += '</tbody>';
+
+  // Totales ponderados (solo lo que tiene sentido sumar y está verificado)
+  const iP = S.ix['PEDIDO'], iE = S.ix['EXPORTADAS'];
+  if (iP != null && iE != null) {
+    let sp = 0, se = 0;
+    lista.forEach(it => { const p = toNum(it.r[iP]), e = toNum(it.r[iE]); if (p != null && e != null) { sp += p; se += e; } });
+    h += '<tfoot><tr>' + cols.map((c, k) => {
+      if (k === 0) return '<td>Total vista (' + fmtN(N) + ' OP)</td>';
+      if (c === 'PEDIDO') return '<td class="num">' + fmtN(sp) + '</td>';
+      if (c === 'EXPORTADAS') return '<td class="num">' + fmtN(se) + '</td>';
+      if (c === '% EXPORTADAS') return '<td class="num">' + fmtN(pct(se, sp), 2) + '</td>';
+      return '<td class="' + (c === '__PCP' ? 'pcp' : '') + '"></td>';
+    }).join('') + '</tr></tfoot>';
+  }
+  h += '</table>';
+  $('tOP').innerHTML = h;
+  $('masOP').innerHTML = N > V.limite
+    ? '<span class="vacio">Mostrando ' + fmtN(V.limite) + ' de ' + fmtN(N) + ' OP (el total y los indicadores sí incluyen todas). </span><button type="button" class="btn chico" id="btnMas">Mostrar las ' + fmtN(N - V.limite) + ' restantes</button>'
+    : '';
+  if ($('btnMas')) $('btnMas').onclick = () => { V.limite = Infinity; render(); };
+}
+
+function renderCargas() {
+  const c = S.cargas;
+  if (!c.length) { $('tCargas').innerHTML = '<div class="vacio">Todavía no se ha subido ningún archivo.</div>'; return; }
+  const cab = ['Carga', 'Fecha y hora', 'Archivo', 'Registró', 'OP en el archivo', 'Nuevas', 'Actualizadas', 'Sin cambios', 'No vinieron', 'Cambios de FEC. DESPACHO'];
+  let h = '<table><thead><tr>' + cab.map((x, i) => '<th' + (i >= 4 ? ' class="num"' : '') + '>' + x + '</th>').join('') + '</tr></thead><tbody>';
+  c.forEach(r => { h += '<tr>' + r.map((v, i) => '<td' + (i >= 4 ? ' class="num"' : '') + '>' + (i >= 4 ? fmtN(toNum(v)) : esc(v)) + '</td>').join('') + '</tr>'; });
+  $('tCargas').innerHTML = h + '</tbody></table>';
+}
+
+function tab(i, btn) {
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tabpane').forEach((p, k) => p.classList.toggle('active', k === i));
+}
+
+function reajustarGrids() {
+  const spanOf = c => c.classList.contains('col8') ? 8 : c.classList.contains('col6') ? 6 : c.classList.contains('col4') ? 4 : 12;
+  document.querySelectorAll('.grid').forEach(g => {
+    const vis = [].filter.call(g.children, c => c.style.display !== 'none');
+    [].forEach.call(g.children, c => { c.style.gridColumn = ''; });
+    let fila = [], acum = 0;
+    const cerrar = () => { if (fila.length && acum < 12) { const u = fila[fila.length - 1]; u.style.gridColumn = 'span ' + (12 - acum + spanOf(u)); } fila = []; acum = 0; };
+    vis.forEach(c => { const sp = spanOf(c); if (acum + sp > 12) cerrar(); fila.push(c); acum += sp; if (acum >= 12) { fila = []; acum = 0; } });
+    cerrar();
+  });
+  plegarTablasEnCelular();
+}
+function plegarTablasEnCelular() {
+  const movil = window.matchMedia('(max-width:600px)').matches;
+  document.querySelectorAll('.panel').forEach(p => {
+    if (!p.querySelector('table') && !p.classList.contains('plegable')) return;
+    if (p.closest('.ficha')) return;
+    if (!movil) { p.classList.remove('plegable', 'plegado'); const b = p.querySelector('.verdet'); if (b) b.remove(); return; }
+    if (p.classList.contains('plegable')) return;
+    p.classList.add('plegable', 'plegado');
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'verdet'; b.textContent = 'Ver tabla';
+    b.onclick = () => { const sigue = p.classList.toggle('plegado'); b.textContent = sigue ? 'Ver tabla' : 'Ocultar tabla'; };
+    p.appendChild(b);
+  });
+}
+window.addEventListener('resize', () => { clearTimeout(window.__rz); window.__rz = setTimeout(plegarTablasEnCelular, 150); });
+
+/* ---------- Guardar FECHA PCP ---------- */
+function ponerEstado(op, html, cls) {
+  document.querySelectorAll('.est').forEach(e => { if (e.dataset.est === op) { e.className = 'est' + (cls ? ' ' + cls : ''); e.innerHTML = html; } });
+}
+function refrescarFila(op) {
+  const it = S.items.find(x => x.op === op);
+  if (!it) return;
+  document.querySelectorAll('td[data-dif]').forEach(td => {
+    if (td.dataset.dif !== op) return;
+    const d = difDias(it);
+    td.innerHTML = d == null ? '—' : '<span class="dif">' + (d > 0 ? '+' : d < 0 ? '−' : '') + fmtN(Math.abs(d)) + '</span>';
+  });
+  document.querySelectorAll('.fpcp').forEach(inp => {
+    if (inp.dataset.op !== op) return;
+    const f = fechaPCPde(op);
+    inp.value = fechaAIso(f); inp.dataset.previo = f; inp.classList.remove('malo');
+  });
+  document.querySelectorAll('[data-hist]').forEach(b => {
+    if (b.dataset.hist === op) { const n = S.histN[op] || 0; b.textContent = 'Historial' + (n ? ' (' + n + ')' : ''); }
+  });
+}
+
+async function guardarFecha(op, fecha, inp) {
+  const usuario = await asegurarUsuario();
+  if (!usuario) {
+    inp.classList.add('malo');
+    ponerEstado(op, 'Sin guardar: falta tu nombre · <button type="button" data-retry="' + esc(op) + '">Reintentar</button>', 'err');
+    return;
+  }
+  ponerEstado(op, 'Guardando…', '');
+  inp.disabled = true;
+  try {
+    const j = await API.fechaPCP({ops: [op], fecha, usuario, origen: 'MANUAL'});
+    if (j.cambiadas) {
+      S.pcp[op] = [fecha, j.ahora, usuario];
+      S.histN[op] = (S.histN[op] || 0) + 1;
+    }
+    inp.disabled = false;
+    refrescarFila(op);
+    ponerEstado(op, fecha ? '✓ Guardado' : '✓ Fecha borrada', 'ok');
+    renderResumen(ordenar(filtrar()));
+    ofrecerPO(op, fecha, usuario);
+  } catch (e) {
+    inp.disabled = false;
+    inp.classList.add('malo');
+    ponerEstado(op, 'No se guardó: ' + esc(e.message) + ' · <button type="button" data-retry="' + esc(op) + '">Reintentar</button>', 'err');
+  }
+}
+
+function ofrecerPO(op, fecha, usuario) {
+  if (!fecha) return;
+  const it = S.items.find(x => x.op === op);
+  if (!it || !it.po) return;
+  const otras = S.items.filter(x => x.op !== op && x.cliente === it.cliente && x.po === it.po);
+  const pendientes = otras.filter(x => fechaPCPde(x.op) !== fecha);
+  if (!pendientes.length) return;
+  toast('Guardado. La P.O. <b>' + esc(it.po) + '</b> (' + esc(it.cliente) + ') tiene ' + fmtN(otras.length) + ' OP más.',
+    '<button type="button" class="btn chico" id="btnPO">Aplicar ' + esc(fecha) + ' a ' + (pendientes.length === 1 ? 'la otra OP' : 'las otras ' + fmtN(pendientes.length) + ' OP') + '</button>', 12000);
+  $('btnPO').onclick = async () => {
+    const conOtra = pendientes.filter(x => fechaPCPde(x.op));
+    if (conOtra.length && !confirm(fmtN(conOtra.length) + ' de esas OP ya tienen otra fecha PCP (' +
+      conOtra.slice(0, 5).map(x => x.op + ': ' + fechaPCPde(x.op)).join(', ') + (conOtra.length > 5 ? '…' : '') +
+      '). ¿Reemplazarla por ' + fecha + '?')) return;
+    $('btnPO').disabled = true; $('btnPO').textContent = 'Guardando…';
+    try {
+      const ops = pendientes.map(x => x.op);
+      const j = await API.fechaPCP({ops, fecha, usuario, origen: 'P.O. ' + it.po});
+      ops.forEach(o => { if (fechaPCPde(o) !== fecha) { S.pcp[o] = [fecha, j.ahora, usuario]; S.histN[o] = (S.histN[o] || 0) + 1; } refrescarFila(o); ponerEstado(o, '✓ Guardado (P.O.)', 'ok'); });
+      renderResumen(ordenar(filtrar()));
+      toast('Fecha PCP ' + esc(fecha) + ' aplicada a ' + fmtN(ops.length) + ' OP de la P.O. ' + esc(it.po) + '.', '', 5000);
+    } catch (e) {
+      toast('No se aplicó a la P.O.: ' + esc(e.message) + '. Las fechas de esas OP no cambiaron.', '', 0);
+    }
+  };
+}
+
+$('tOP').addEventListener('change', e => {
+  const inp = e.target.closest('.fpcp');
+  if (!inp) return;
+  const fecha = isoAFecha(inp.value);
+  if (inp.value && !fecha) { inp.classList.add('malo'); ponerEstado(inp.dataset.op, 'Fecha inválida', 'err'); return; }
+  if (fecha === (inp.dataset.previo || '')) return;
+  guardarFecha(inp.dataset.op, fecha, inp);
+});
+$('tOP').addEventListener('click', e => {
+  const th = e.target.closest('th[data-sort]');
+  if (th) {
+    const c = th.dataset.sort;
+    V.sort = {col: c, dir: V.sort.col === c ? -V.sort.dir : 1};
+    render(); return;
+  }
+  const r = e.target.closest('[data-retry]');
+  if (r) {
+    const op = r.dataset.retry;
+    const inp = [...document.querySelectorAll('.fpcp')].find(x => x.dataset.op === op);
+    if (inp) guardarFecha(op, isoAFecha(inp.value), inp);
+    return;
+  }
+  const hb = e.target.closest('[data-hist]');
+  if (hb) abrirHistorial(hb.dataset.hist);
+});
+
+/* ---------- Historial ---------- */
+async function abrirHistorial(op) {
+  const it = S.items.find(x => x.op === op);
+  $('fTitulo').textContent = 'Historial de la OP ' + op;
+  $('fSub').textContent = it ? [it.cliente, 'P.O. ' + it.po, 'FEC. DESPACHO ' + valStr(it.r[S.ix['FEC. DESPACHO']]), 'FECHA PCP ' + (fechaPCPde(op) || '—')].join(' · ') : '';
+  $('fTabla').innerHTML = '<div class="vacio">Leyendo…</div>';
+  $('fback').classList.add('abierta'); $('ficha').classList.add('abierta'); $('ficha').setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+  try {
+    const j = await API.historial(op);
+    if (!j.filas.length) { $('fTabla').innerHTML = '<div class="vacio">Esta OP todavía no tiene cambios registrados de FECHA PCP ni de FEC. DESPACHO.</div>'; return; }
+    const cab = ['Fecha y hora', 'Campo', 'Antes', 'Después', 'Registró', 'Origen'];
+    $('fTabla').innerHTML = '<table><thead><tr>' + cab.map(x => '<th>' + x + '</th>').join('') + '</tr></thead><tbody>' +
+      j.filas.map(f => '<tr><td>' + esc(f[0]) + '</td><td>' + esc(f[2]) + '</td><td>' + (esc(f[3]) || '—') + '</td><td>' + (esc(f[4]) || '—') + '</td><td>' + esc(f[5]) + '</td><td>' + esc(f[6]) + '</td></tr>').join('') +
+      '</tbody></table>';
+  } catch (e) {
+    $('fTabla').innerHTML = '<div class="aviso error">No se pudo leer el historial: ' + esc(e.message) + '</div>';
+  }
+}
+function cerrarFicha() { $('fback').classList.remove('abierta'); $('ficha').classList.remove('abierta'); $('ficha').setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; }
+$('fCerrar').onclick = cerrarFicha; $('fback').onclick = cerrarFicha;
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { cerrarFicha(); if ($('mPrev').classList.contains('abierta')) cerrarPrevia(); } });
+
+/* ---------- Lectura del Excel ---------- */
+function fechaDeSerial(v) { const d = XLSX.SSF.parse_date_code(v); return d ? pad(d.d) + '/' + pad(d.m) + '/' + d.y : ''; }
+function leerExcel(buf) {
+  const wb = XLSX.read(buf, {type: 'array', cellStyles: true});
+  let ws = null, rg = null, filaCab = -1, hoja = '';
+  for (const sn of wb.SheetNames) {
+    const w = wb.Sheets[sn];
+    if (!w || !w['!ref']) continue;
+    const r0 = XLSX.utils.decode_range(w['!ref']);
+    for (let r = r0.s.r; r <= Math.min(r0.e.r, r0.s.r + 40); r++) {
+      const nombres = [];
+      for (let c = r0.s.c; c <= r0.e.c; c++) { const cell = w[XLSX.utils.encode_cell({r, c})]; nombres.push(cell ? normHeader(cell.v) : ''); }
+      if (nombres.indexOf('OP') >= 0 && nombres.indexOf('FEC. DESPACHO') >= 0) { ws = w; rg = r0; filaCab = r; hoja = sn; break; }
+    }
+    if (ws) break;
+  }
+  if (!ws) throw new Error('No encontré la fila de encabezados con OP y FEC. DESPACHO. ¿Es el reporte Situación de Pedido Global?');
+
+  const colIdx = [], cols = [], repetidas = {};
+  for (let c = rg.s.c; c <= rg.e.c; c++) {
+    const cell = ws[XLSX.utils.encode_cell({r: filaCab, c})];
+    let n = cell ? normHeader(cell.v) : '';
+    if (!n) continue;
+    if (repetidas[n]) { repetidas[n]++; n = n + ' (' + repetidas[n] + ')'; } else repetidas[n] = 1;
+    colIdx.push(c); cols.push(n);
+  }
+  const iOP = cols.indexOf('OP');
+  const infoFilas = ws['!rows'] || [];
+  const rows = [];
+  let ocultas = 0, totales = 0, sinOP = 0, sinCalculo = 0;
+  for (let r = filaCab + 1; r <= rg.e.r; r++) {
+    let faltaCalculo = 0;
+    const valores = colIdx.map((c, j) => {
+      const cell = ws[XLSX.utils.encode_cell({r, c})];
+      if (!cell) return '';
+      if (cell.f && (cell.t === 'z' || cell.v === undefined)) { faltaCalculo++; return ''; }
+      if (cell.t === 'n') return (/^FEC/.test(cols[j]) && cell.z && XLSX.SSF.is_date(cell.z)) ? fechaDeSerial(cell.v) : cell.v;
+      if (cell.t === 'd') { const d = new Date(cell.v); return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear(); }
+      if (cell.t === 'b') return cell.v ? 'SI' : 'NO';
+      if (cell.t === 'e' || cell.t === 'z') return '';
+      return String(cell.v == null ? '' : cell.v).trim();
+    });
+    if (valores.every(v => v === '')) continue;
+    if (infoFilas[r] && infoFilas[r].hidden) { ocultas++; continue; }
+    const op = valStr(valores[iOP]).toUpperCase();
+    if (op === 'TOTAL' || op === 'PORC') { totales++; continue; }
+    if (!op) { sinOP++; continue; }
+    sinCalculo += faltaCalculo;
+    rows.push(valores);
+  }
+  return {hoja, filaCab: filaCab + 1, cols, rows, ocultas, totales, sinOP, sinCalculo};
+}
+
+async function procesarArchivo(file) {
+  if (!file) return;
+  aviso('');
+  if (!/\.xlsx?$/i.test(file.name)) { aviso('Ese archivo no es un Excel (.xlsx). Sube el reporte Situación de Pedido Global.', 'error'); return; }
+  if (!window.XLSX) { aviso('No cargó el lector de Excel (SheetJS). Revisa tu conexión a internet y refresca con Ctrl+Shift+R.', 'error'); return; }
+  let leido;
+  try {
+    leido = leerExcel(new Uint8Array(await file.arrayBuffer()));
+  } catch (e) { aviso('No se pudo leer el archivo: ' + esc(e.message), 'error'); return; }
+  const carga = {cols: leido.cols, rows: leido.rows};
+  const errores = validarCarga(carga);
+  if (errores.length) { aviso(errores.map(esc).join('<br>'), 'error'); return; }
+  // Se relee la base justo antes de comparar, por si alguien cargó mientras tanto
+  if (!(await recargar())) return;
+  const fus = fusionarCarga({cols: S.cols, rows: S.rows}, carga, '');
+  PENDIENTE = {archivo: file.name, leido, carga};
+  mostrarPrevia(file.name, leido, fus);
+}
+
+function mostrarPrevia(nombre, leido, fus) {
+  const r = fus.res;
+  $('prevArchivo').textContent = nombre + ' · hoja ' + leido.hoja + ' · encabezados en la fila ' + leido.filaCab;
+  const ign = [];
+  if (leido.totales) ign.push(fmtN(leido.totales) + ' fila' + (leido.totales === 1 ? '' : 's') + ' de totales (Total / Porc)');
+  if (leido.ocultas) ign.push(fmtN(leido.ocultas) + ' fila' + (leido.ocultas === 1 ? '' : 's') + ' oculta' + (leido.ocultas === 1 ? '' : 's') + ' por filtro');
+  if (leido.sinOP) ign.push(fmtN(leido.sinOP) + ' fila' + (leido.sinOP === 1 ? '' : 's') + ' sin OP');
+  const sysBase = S.cols.filter(c => COLS_CONTROL.indexOf(c) < 0);
+  const colsNuevas = sysBase.length ? leido.cols.filter(c => sysBase.indexOf(c) < 0) : [];
+  const colsFaltan = sysBase.filter(c => leido.cols.indexOf(c) < 0);
+  const conPCP = S.items.filter(it => fechaPCPde(it.op)).length;
+  const cell = (cls, l, v, s) => '<div class="rcell ' + cls + '"><div class="l">' + l + '</div><div class="v">' + v + '</div><div class="s">' + s + '</div></div>';
+
+  let h = '<div style="font-size:13.5px"><b>' + fmtN(leido.rows.length) + ' OP visibles</b> en el archivo.' + (ign.length ? ' Se ignoraron: ' + ign.join(', ') + '.' : '') + '</div>';
+  h += '<div class="rgrid">' +
+    cell('', 'Nuevas', fmtN(r.nuevas.length), 'se agregan') +
+    cell('', 'Se actualizan', fmtN(r.actualizadas.length), 'traen algún dato distinto') +
+    cell('neutro', 'Sin cambios', fmtN(r.sinCambios), 'vinieron igual') +
+    cell('neutro', 'No vinieron', fmtN(r.noVinieron.length), 'se conservan, no se borran') +
+    '</div>';
+  if (r.dejanDeVenir.length && S.items.length) {
+    h += '<div class="lista">De las que no vinieron, <b>' + fmtN(r.dejanDeVenir.length) + '</b> sí estaban en la carga anterior. Si filtraste el Excel a propósito, es normal.</div>';
+  }
+  if (r.cambiosDespacho.length) {
+    h += '<div class="cuidado"><b>' + fmtN(r.cambiosDespacho.length) + ' OP cambian de FEC. DESPACHO</b> según el sistema (queda en su historial):<ul>' +
+      r.cambiosDespacho.slice(0, 8).map(c => '<li>OP ' + esc(c.op) + ': ' + esc(c.antes || '—') + ' → ' + esc(c.despues || '—') + '</li>').join('') +
+      (r.cambiosDespacho.length > 8 ? '<li>… y ' + fmtN(r.cambiosDespacho.length - 8) + ' más</li>' : '') + '</ul></div>';
+  }
+  if (colsNuevas.length) h += '<div class="cuidado">El archivo trae columnas que la base no tenía: ' + colsNuevas.map(esc).join(', ') + '. Se agregan.</div>';
+  if (colsFaltan.length) h += '<div class="cuidado">Al archivo le faltan columnas que la base sí tiene: ' + colsFaltan.map(esc).join(', ') + '. Esas conservan su valor anterior.</div>';
+  if (leido.sinCalculo) h += '<div class="cuidado">' + fmtN(leido.sinCalculo) + ' celda' + (leido.sinCalculo === 1 ? '' : 's') + ' con fórmula no tienen valor calculado (se guardan vacías). Abre el Excel, guárdalo desde Excel y vuelve a subirlo si esa columna importa.</div>';
+  h += '<div class="protege">La <b>FECHA PCP no se toca</b>: ' + (conPCP ? 'las ' + fmtN(conPCP) + ' OP que ya la tienen la conservan.' : 'todavía ninguna OP la tiene.') + '</div>';
+  $('prevCuerpo').innerHTML = h;
+  $('prevConfirmar').disabled = false; $('prevConfirmar').textContent = 'Confirmar carga';
+  $('mPrev').classList.add('abierta');
+}
+function cerrarPrevia() { $('mPrev').classList.remove('abierta'); PENDIENTE = null; $('file').value = ''; }
+$('prevCancelar').onclick = cerrarPrevia;
+
+$('prevConfirmar').onclick = async () => {
+  if (!PENDIENTE) return;
+  const usuario = await asegurarUsuario();
+  if (!usuario) return;
+  const btn = $('prevConfirmar');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  try {
+    const p = PENDIENTE;
+    const j = await API.cargar({archivo: p.archivo, usuario, cols: p.carga.cols, rows: p.carga.rows});
+    cerrarPrevia();
+    await recargar();
+    const r = j.res;
+    const pl = (n, uno, varios) => fmtN(n) + ' ' + (n === 1 ? uno : varios);
+    toast('Carga ' + esc(j.id) + ' guardada: ' + pl(r.nuevas, 'nueva', 'nuevas') + ', ' + pl(r.actualizadas, 'actualizada', 'actualizadas') + ', ' + fmtN(r.sinCambios) + ' sin cambios, ' + pl(r.noVinieron, 'no vino', 'no vinieron') + ' (conservadas).', '', 9000);
+  } catch (e) {
+    btn.disabled = false; btn.textContent = 'Confirmar carga';
+    $('prevCuerpo').insertAdjacentHTML('afterbegin', '<div class="aviso error">No se guardó: ' + esc(e.message) + '. No cambió nada en la base; puedes volver a confirmar.</div>');
+  }
+};
+
+/* ---------- Descargar Excel de la vista ---------- */
+$('btnExcel').onclick = () => {
+  if (!window.XLSX) { aviso('No cargó el lector de Excel (SheetJS). Refresca con Ctrl+Shift+R.', 'error'); return; }
+  const lista = ordenar(filtrar());
+  const sys = S.cols.filter(c => COLS_CONTROL.indexOf(c) < 0);
+  const i = sys.indexOf('FEC. DESPACHO');
+  const cab = sys.slice();
+  cab.splice(i >= 0 ? i + 1 : cab.length, 0, 'FECHA PCP', 'DIF. DÍAS (PCP − DESPACHO)');
+  cab.push('VINO EN ÚLTIMA CARGA', 'ÚLTIMA VEZ QUE VINO', 'PRIMERA CARGA', 'FECHA PCP ACTUALIZADA', 'FECHA PCP REGISTRÓ');
+  const aoa = [cab].concat(lista.map(it => {
+    const fila = sys.map(c => { const v = it.r[S.ix[c]]; return v == null ? '' : v; });
+    const p = S.pcp[it.op] || ['', '', ''];
+    const d = difDias(it);
+    fila.splice(i >= 0 ? i + 1 : fila.length, 0, p[0] || '', d == null ? '' : d);
+    fila.push(it.enUlt, valStr(it.r[S.ix['ULTIMA_VEZ_VISTA']]), valStr(it.r[S.ix['PRIMERA_CARGA']]), p[1] || '', p[2] || '');
+    return fila;
+  }));
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!autofilter'] = {ref: XLSX.utils.encode_range({s: {r: 0, c: 0}, e: {r: aoa.length - 1, c: cab.length - 1}})};
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Despachos PCP');
+  const d = new Date();
+  XLSX.writeFile(wb, 'Despachos_PCP_' + d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + '.xlsx');
+};
+
+/* ---------- Barra ---------- */
+let tq = null;
+$('q').addEventListener('input', () => { clearTimeout(tq); tq = setTimeout(() => { V.q = $('q').value; V.limite = LIMITE_FILAS; render(); }, 200); });
+$('fCliente').onchange = () => { V.cliente = $('fCliente').value; V.limite = LIMITE_FILAS; render(); };
+$('fMes').onchange = () => { V.mes = $('fMes').value; V.limite = LIMITE_FILAS; render(); };
+$('fCarga').onchange = () => { V.carga = $('fCarga').value; V.limite = LIMITE_FILAS; render(); };
+$('segPCP').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  $('segPCP').querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b));
+  V.pcp = b.dataset.v; V.limite = LIMITE_FILAS; render();
+};
+$('segCols').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  $('segCols').querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b));
+  V.colsModo = b.dataset.v; render();
+};
+$('usuario').value = nombreGuardado();
+$('usuario').addEventListener('change', () => { const v = $('usuario').value.trim(); if (v) { guardarNombre(v); $('quien').classList.remove('falta'); } });
+$('btnSubir').onclick = () => $('file').click();
+$('file').onchange = e => procesarArchivo(e.target.files[0]);
+const drop = $('drop');
+drop.onclick = () => $('file').click();
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); procesarArchivo(e.dataTransfer.files[0]); });
+
+/* ---------- Inicio ---------- */
+if (API.prueba()) {
+  aviso('<b>Modo prueba:</b> esta copia no está conectada a la base (falta la URL del Apps Script). Puedes subir el Excel y escribir fechas para probar, pero <b>nada se guarda</b> al cerrar la página.', 'info');
+}
+recargar();
+</script>
+</body>
+</html>
