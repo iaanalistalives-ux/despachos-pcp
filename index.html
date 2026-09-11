@@ -1264,8 +1264,10 @@ $('prevConfirmar').onclick = async () => {
 /* =============================================================================
    EXPORTADOR EXCEL LIVES v1
    Pegar tal cual en cualquier dashboard o formulario LIVES.
-   Requiere ExcelJS por CDN (SheetJS NO sirve: no escribe colores):
-     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"><\/script>
+   Requiere ExcelJS por CDN (SheetJS NO sirve: no escribe colores). Agregar al <head>:
+     script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"
+   (etiqueta script normal; aquí va sin los signos < > porque un cierre de script dentro
+   de un comentario corta el bloque del HTML donde se pegue este archivo)
 
    Uso mínimo:
      exportarExcelLIVES({
@@ -1296,6 +1298,7 @@ var LIVES_FORMATOS = {
   alfanumerico : '@',
   entero       : '#,##0',
   decimal      : '#,##0.00',
+  decimal3     : '#,##0.000',    /* excepción: solo si el dato pierde sentido con 2 */
   porcentaje   : '0.00%',        /* el valor va como fracción: 0.529 -> 52.90% */
   porcentaje0  : '0%',
   moneda       : '"S/ "#,##0.00',
@@ -1393,7 +1396,10 @@ async function exportarExcelLIVES(cfg){
   c1.value = ctx.titulo;
   c1.fill  = { type:'pattern', pattern:'solid', fgColor:{argb:LIVES_XLS.PETROLEO} };
   c1.font  = { name:'Calibri', size:13, bold:true, color:{argb:'FFFFFFFF'} };
-  c1.alignment = { vertical:'middle', horizontal:'center' };
+  /* Alineado a la izquierda, no centrado: en tablas anchas (30, 40, 50 columnas) un
+     título centrado queda a mitad del ancho y no se ve al abrir el archivo. El indent
+     lo despega del logo. */
+  c1.alignment = { vertical:'middle', horizontal:'left', indent:18 };
 
   if(LIVES_XLS.LOGO_B64){
     var img = wb.addImage({ base64: LIVES_XLS.LOGO_B64, extension:'png' });
@@ -1409,7 +1415,7 @@ async function exportarExcelLIVES(cfg){
     c2.value = ctx.sub;
     c2.fill  = { type:'pattern', pattern:'solid', fgColor:{argb:LIVES_XLS.SLATE} };
     c2.font  = { name:'Calibri', size:10, bold:true, color:{argb:'FFFFFFFF'} };
-    c2.alignment = { vertical:'middle', horizontal:'center' };
+    c2.alignment = { vertical:'middle', horizontal:'left', indent:18 };
     hoja.getRow(fila).height = 18;
     fila++;
   }
@@ -1452,7 +1458,9 @@ async function exportarExcelLIVES(cfg){
       var v = f[c.campo];
       /* Sin dato = celda vacía. Un cero es un dato; un vacío es la ausencia de dato. */
       cel.value = (v===null||v===undefined||v==='') ? null : v;
-      cel.numFmt = LIVES_FORMATOS[tipos[j]] || '@';
+      /* 'formato' permite un formato de Excel propio para una columna concreta.
+         Es la única manera aprobada de pasarse de 2 decimales, y debe justificarse. */
+      cel.numFmt = c.formato || LIVES_FORMATOS[tipos[j]] || '@';
       cel.font = { name:'Calibri', size:11, color:{argb:'FF333333'} };
       cel.alignment = {
         vertical:'middle',
@@ -1503,12 +1511,14 @@ async function exportarExcelLIVES(cfg){
 
 
 /* Tipo declarado de cada columna del reporte Situación de Pedido Global.
-   Verificado contra el archivo real: los % vienen en escala 0–100 y son cantidad ÷ PEDIDO. */
+   Verificado contra el archivo real: los % vienen en escala 0–100 y son cantidad ÷ PEDIDO.
+   SUM. COMP. TELA va con decimal3 (excepción aprobada por la skill): es consumo de tela por prenda,
+   el sistema lo da con 3 decimales y hay valores de 0.036, que con 2 decimales se verían como 0.04. */
 const TIPOS_EXCEL = {
   'OP': 'alfanumerico', 'GRUPO PROD.': 'alfanumerico', 'ESTILO LIVES': 'alfanumerico', 'CATEG. PRENDA': 'texto',
   'CLIENTE': 'alfanumerico', 'P.O.': 'alfanumerico', 'ESTILO CLIENTE': 'alfanumerico', 'RUTA PRENDA': 'texto',
   'FEC. HITO TINTO': 'fecha', 'FEC. DESPACHO': 'fecha',
-  'PEDIDO': 'entero', 'SUM. COMP. TELA': 'decimal', 'A PROD.': 'entero', 'GIRADAS': 'entero', '% GIRADAS': 'porcentaje',
+  'PEDIDO': 'entero', 'SUM. COMP. TELA': 'decimal3', 'A PROD.': 'entero', 'GIRADAS': 'entero', '% GIRADAS': 'porcentaje',
   'CORTADAS': 'entero', 'MIN. CORTE': 'decimal', '% CORTADAS': 'porcentaje', 'BORD. PZA.': 'entero', 'ESTAMP. PZA.': 'entero',
   'HABILITADAS': 'entero', '% HABILITADAS': 'porcentaje', 'CONFEC.': 'entero', 'NO CONFECC.': 'entero',
   'MIN. COSTURA': 'decimal', 'MIN. NO CONFECC.': 'decimal', 'BORD. PDA.': 'entero', 'ESTAMP. PDA.': 'entero',
