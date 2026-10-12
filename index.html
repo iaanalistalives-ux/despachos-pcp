@@ -676,6 +676,7 @@ gap:12px;align-items:center;flex-wrap:wrap;width:max-content;max-width:min(760px
   .tscroll{overflow:visible;}
   td,th{white-space:normal;}
 }
+.lsTope500{font-size:12px;color:#5F726C;text-align:center;padding:8px 0}
 </style>
 <style id="lsLimp2Css">/* lives-limpieza v2 · sin notas, veredictos ni paneles de título arriba */.verdict,#verdict{display:none!important}#insight{display:none!important}#nota{display:none!important}</style>
 </head>
@@ -1332,7 +1333,10 @@ function renderTabla(lista) {
     $('masOP').innerHTML = '';
     return;
   }
-  const visibles = lista.slice(0, V.limite);
+  /* Regla 500: sin filtros se dibujan 500 OP; con cualquier filtro, todas. Total e indicadores usan todas. */
+  const sinFiltro = !V.q.trim() && !V.cliente && !V.mes && V.pcp === 'todas' && !V.carga;
+  const tope = sinFiltro ? 500 : Infinity;
+  const visibles = lista.slice(0, tope);
   let h = '<table><thead><tr>';
   cols.forEach(c => {
     const ord = c !== '__HIST';
@@ -1361,10 +1365,9 @@ function renderTabla(lista) {
   }
   h += '</table>';
   $('tOP').innerHTML = h;
-  $('masOP').innerHTML = '<div class="ph">Total de % EXPORTADAS = suma de exportadas ÷ suma de pedido de las OP en la vista (ponderado, no promedio de porcentajes).</div>' + (N > V.limite
-    ? '<span class="vacio">Mostrando ' + fmtN(V.limite) + ' de ' + fmtN(N) + ' OP (el total y los indicadores sí incluyen todas). </span><button type="button" class="btn chico" id="btnMas">Mostrar las ' + fmtN(N - V.limite) + ' restantes</button>'
+  $('masOP').innerHTML = '<div class="ph">Total de % EXPORTADAS = suma de exportadas ÷ suma de pedido de las OP en la vista (ponderado, no promedio de porcentajes).</div>' + (N > tope
+    ? '<div class="lsTope500">Se muestran los primeros 500 registros de ' + Number(N).toLocaleString('es-PE') + '. Usa los filtros para ver los demás.</div>'
     : '');
-  if ($('btnMas')) $('btnMas').onclick = () => { V.limite = Infinity; render(); };
 }
 
 function renderCargas() {
